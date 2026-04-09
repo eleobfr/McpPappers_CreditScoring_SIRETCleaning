@@ -1,7 +1,13 @@
 "use client";
 
 import Script from "next/script";
-import { useEffect, useId, useRef } from "react";
+import {
+  useEffect,
+  useEffectEvent,
+  useId,
+  useRef,
+  useState,
+} from "react";
 
 declare global {
   interface Window {
@@ -31,19 +37,28 @@ export function TurnstileWidget({
 }) {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const widgetIdRef = useRef<string | null>(null);
+  const [scriptReady, setScriptReady] = useState(false);
   const scriptId = useId();
+  const handleTokenChange = useEffectEvent((token: string) => {
+    onTokenChange(token);
+  });
 
   useEffect(() => {
-    if (!siteKey || !containerRef.current || !window.turnstile || widgetIdRef.current) {
+    if (!siteKey || !scriptReady || !containerRef.current || !window.turnstile) {
       return;
     }
 
+    if (widgetIdRef.current) {
+      return;
+    }
+
+    containerRef.current.innerHTML = "";
     widgetIdRef.current = window.turnstile.render(containerRef.current, {
       sitekey: siteKey,
       theme: "light",
-      callback: (token) => onTokenChange(token),
-      "expired-callback": () => onTokenChange(""),
-      "error-callback": () => onTokenChange(""),
+      callback: (token) => handleTokenChange(token),
+      "expired-callback": () => handleTokenChange(""),
+      "error-callback": () => handleTokenChange(""),
     });
 
     return () => {
@@ -52,7 +67,7 @@ export function TurnstileWidget({
         widgetIdRef.current = null;
       }
     };
-  }, [onTokenChange, siteKey]);
+  }, [scriptReady, siteKey]);
 
   if (!siteKey) {
     return null;
@@ -64,6 +79,7 @@ export function TurnstileWidget({
         id={`turnstile-${scriptId}`}
         src="https://challenges.cloudflare.com/turnstile/v0/api.js?render=explicit"
         strategy="afterInteractive"
+        onLoad={() => setScriptReady(true)}
       />
       <div className="turnstile-shell">
         <div ref={containerRef} />
