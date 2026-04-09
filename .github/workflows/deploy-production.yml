@@ -1,4 +1,4 @@
-name: Deploy mixo75
+name: Deploy production
 
 on:
   workflow_dispatch:
@@ -7,7 +7,7 @@ on:
       - main
 
 concurrency:
-  group: deploy-mixo75
+  group: deploy-production
   cancel-in-progress: true
 
 jobs:
@@ -50,69 +50,70 @@ jobs:
             --exclude=.next-dev.err.log \
             --exclude=.next-dev-auth.log \
             --exclude=.next-dev-auth.err.log \
-            -czf dist/credit-ops-release.tar.gz .
+            -czf dist/app-release.tar.gz .
 
       - name: Setup SSH agent
         uses: webfactory/ssh-agent@v0.9.0
         with:
-          ssh-private-key: ${{ secrets.MIXO75_SSH_PRIVATE_KEY }}
+          ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
 
       - name: Normalize deployment host
         run: |
           python - <<'PY' >> "$GITHUB_ENV"
           from urllib.parse import urlparse
 
-          raw = """${{ vars.MIXO75_HOST }}""".strip()
+          raw = """${{ vars.DEPLOY_HOST }}""".strip()
           if "://" in raw:
             host = urlparse(raw).hostname or raw
           else:
             host = raw.rstrip("/")
 
           if not host:
-            host = "51.159.109.45"
+            raise SystemExit("DEPLOY_HOST must be configured")
 
-          print(f"DEPLOY_HOST={host}")
+          print(f"DEPLOY_HOST_NORMALIZED={host}")
           PY
 
       - name: Normalize deployment user
         run: |
           python - <<'PY' >> "$GITHUB_ENV"
-          raw = """${{ vars.MIXO75_USER }}""".strip()
+          raw = """${{ vars.DEPLOY_USER }}""".strip()
           if "@" in raw:
             user = raw.split("@", 1)[0]
           else:
             user = raw
 
           if not user:
-            user = "github-creditops"
+            raise SystemExit("DEPLOY_USER must be configured")
 
-          print(f"DEPLOY_USER={user}")
+          print(f"DEPLOY_USER_NORMALIZED={user}")
           PY
 
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          if ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
-            echo "SSH_HOST=$DEPLOY_HOST" >> "$GITHUB_ENV"
-          else
-            ssh-keyscan -H "51.159.109.45" >> ~/.ssh/known_hosts 2>/dev/null
-            echo "SSH_HOST=51.159.109.45" >> "$GITHUB_ENV"
-          fi
+          ssh-keyscan -H "$DEPLOY_HOST_NORMALIZED" >> ~/.ssh/known_hosts 2>/dev/null
 
       - name: Upload release
         run: |
-          scp dist/credit-ops-release.tar.gz "$DEPLOY_USER@$SSH_HOST:/tmp/credit-ops-${{ github.sha }}.tar.gz"
+          scp dist/app-release.tar.gz "$DEPLOY_USER_NORMALIZED@$DEPLOY_HOST_NORMALIZED:/tmp/app-release-${{ github.sha }}.tar.gz"
 
       - name: Deploy on server
         run: |
-          ssh "$DEPLOY_USER@$SSH_HOST" <<'EOF'
+          ssh "$DEPLOY_USER_NORMALIZED@$DEPLOY_HOST_NORMALIZED" <<'EOF'
           set -euo pipefail
 
           SHA="${{ github.sha }}"
-          APP_DIR="/opt/vbaidata/apps/pappersmcp"
-          STACK_DIR="/opt/vbaidata"
-          STAGING_DIR="/tmp/credit-ops-$SHA"
-          ARCHIVE="/tmp/credit-ops-$SHA.tar.gz"
+          APP_DIR="${{ vars.DEPLOY_APP_DIR }}"
+          STACK_DIR="${{ vars.DEPLOY_STACK_DIR }}"
+          SERVICE_NAME="${{ vars.DEPLOY_SERVICE }}"
+          STAGING_DIR="/tmp/app-release-$SHA"
+          ARCHIVE="/tmp/app-release-$SHA.tar.gz"
+
+          if [ -z "$APP_DIR" ] || [ -z "$STACK_DIR" ] || [ -z "$SERVICE_NAME" ]; then
+            echo "Deployment variables DEPLOY_APP_DIR, DEPLOY_STACK_DIR and DEPLOY_SERVICE must be configured." >&2
+            exit 1
+          fi
 
           rm -rf "$STAGING_DIR"
           mkdir -p "$STAGING_DIR"
@@ -124,7 +125,7 @@ jobs:
           rm -rf "$STAGING_DIR"
 
           cd "$STACK_DIR"
-          docker compose up -d --build pappersmcp
+          docker compose up -d --build "$SERVICE_NAME"
 
           docker image prune -f >/dev/null 2>&1 || true
           EOF

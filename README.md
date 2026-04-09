@@ -140,9 +140,13 @@ npm run build
 
 ## Deploiement
 
-Le deploiement serveur vise `mixo75` via GitHub Actions.
+Le deploiement de production peut etre automatise via GitHub Actions.
 
-- workflow : `.github/workflows/deploy-mixo75.yml`
-- SMTP mutualise : `/etc/eleob/common-mail.env`
-- variables app : `/srv/credit-ops/.env.app`
-- data persistante : `/srv/credit-ops/data`
+- workflow : `.github/workflows/deploy-production.yml`
+- secrets / variables GitHub attendus :
+  - `DEPLOY_SSH_PRIVATE_KEY`
+  - `DEPLOY_HOST`
+  - `DEPLOY_USER`
+  - `DEPLOY_APP_DIR`
+  - `DEPLOY_STACK_DIR`
+  - `DEPLOY_SERVICE`
