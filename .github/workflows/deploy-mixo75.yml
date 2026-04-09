@@ -120,7 +120,7 @@ jobs:
           rm -f "$ARCHIVE"
 
           find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name .env.local -exec rm -rf {} +
-          cp -a "$STAGING_DIR"/. "$APP_DIR"/
+          cp -R "$STAGING_DIR"/. "$APP_DIR"/
           rm -rf "$STAGING_DIR"
 
           cd "$STACK_DIR"
