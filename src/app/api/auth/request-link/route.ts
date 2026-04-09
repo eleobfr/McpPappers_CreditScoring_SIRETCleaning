@@ -7,8 +7,10 @@ import {
   deriveFullNameFromEmail,
   isAdminEmail,
   normalizeEmail,
+  queueAdminDigestEvent,
 } from "@/lib/auth/auth-repository";
 import { requestMagicLink, AUTH_SESSION_COOKIE } from "@/lib/auth/session";
+import { sendQueuedDailyConnectionsReportIfDue } from "@/lib/auth/magic-link-email";
 import { verifyTurnstileToken } from "@/lib/security/turnstile";
 
 const requestSchema = z.object({
@@ -67,6 +69,17 @@ export async function POST(request: Request) {
       path: "/",
       expires: new Date(session.expiresAt),
     });
+
+    queueAdminDigestEvent({
+      eventType: "application-login",
+      userEmail: user.email,
+      userFullName: user.fullName,
+      payload: {
+        userRole: "admin",
+        sessionExpiresAt: session.expiresAt,
+      },
+    });
+    await sendQueuedDailyConnectionsReportIfDue();
 
     return response;
   }

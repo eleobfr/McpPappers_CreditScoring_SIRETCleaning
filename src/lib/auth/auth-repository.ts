@@ -21,6 +21,7 @@ export interface MagicLinkRecord {
 }
 
 export type AdminDigestEventType =
+  | "application-login"
   | "non-admin-connection"
   | "non-admin-feedback";
 

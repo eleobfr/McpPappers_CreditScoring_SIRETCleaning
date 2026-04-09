@@ -31,6 +31,7 @@ import {
   ensureAdminDigestScheduler,
   sendMagicLinkEmail,
   sendQueuedAdminDigestIfDue,
+  sendQueuedDailyConnectionsReportIfDue,
 } from "@/lib/auth/magic-link-email";
 import { logEvent } from "@/lib/logger";
 
@@ -131,6 +132,16 @@ export async function signInUser(input: { email: string; fullName: string }) {
     expires: new Date(session.expiresAt),
   });
 
+  queueAdminDigestEvent({
+    eventType: "application-login",
+    userEmail: user.email,
+    userFullName: user.fullName,
+    payload: {
+      userRole: user.isAdmin ? "admin" : "non-admin",
+      sessionExpiresAt: session.expiresAt,
+    },
+  });
+
   return user;
 }
 
@@ -151,6 +162,16 @@ export async function autoSignInAdmin(email: string) {
     secure: false,
     path: "/",
     expires: new Date(session.expiresAt),
+  });
+
+  queueAdminDigestEvent({
+    eventType: "application-login",
+    userEmail: user.email,
+    userFullName: user.fullName,
+    payload: {
+      userRole: "admin",
+      sessionExpiresAt: session.expiresAt,
+    },
   });
 
   return user;
@@ -207,15 +228,16 @@ export async function consumeMagicLinkAndCreateSession(token: string) {
   const session = createSession(user.id, NON_ADMIN_SESSION_DURATION_MINUTES);
 
   queueAdminDigestEvent({
-    eventType: "non-admin-connection",
+    eventType: "application-login",
     userEmail: email,
     userFullName: user.fullName,
     payload: {
+      userRole: "non-admin",
       sessionExpiresAt: session.expiresAt,
       sessionDurationMinutes: NON_ADMIN_SESSION_DURATION_MINUTES,
     },
   });
-  await sendQueuedAdminDigestIfDue();
+  await sendQueuedDailyConnectionsReportIfDue();
 
   return {
     user,

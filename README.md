@@ -79,8 +79,8 @@ docker compose --env-file .env.local up --build
 
 Notifications admin :
 
-- les connexions non-admin et feedbacks de fin de session sont agreges dans un resume horaire
-- le resume est envoye en HTML fr-FR a l'admin
+- les connexions a l'application sont agregees dans un rapport quotidien HTML fr-FR
+- les feedbacks de fin de session non-admin restent agreges dans un resume horaire
 - l'envoi est pilote par une file d'evenements en base et un scheduler serveur leger
 
 Creer ou promouvoir un admin :
