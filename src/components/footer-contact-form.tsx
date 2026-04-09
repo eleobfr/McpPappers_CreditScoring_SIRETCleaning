@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useTransition } from "react";
+import Image from "next/image";
 
 import { TurnstileWidget } from "@/components/turnstile-widget";
 
@@ -98,6 +99,7 @@ export function FooterContactForm({
             name="fullName"
             onChange={(event) => setFullName(event.target.value)}
             placeholder="Votre nom"
+            required
             type="text"
             value={fullName}
           />
@@ -111,6 +113,7 @@ export function FooterContactForm({
             name="email"
             onChange={(event) => setEmail(event.target.value)}
             placeholder="vous@entreprise.fr"
+            required
             type="email"
             value={email}
           />
@@ -136,14 +139,14 @@ export function FooterContactForm({
             className="textarea footer-textarea"
             name="message"
             onChange={(event) => setMessage(event.target.value)}
-            placeholder="Décrivez votre besoin, votre contexte ou votre demande de démonstration."
+            placeholder="Si vous le souhaitez, décrivez brièvement votre besoin."
             rows={5}
             value={message}
           />
           {fieldErrors.message ? <p className="field-error">{fieldErrors.message[0]}</p> : null}
         </label>
 
-        <label className="field footer-honeypot" aria-hidden="true">
+        <label aria-hidden="true" className="field footer-honeypot">
           <span className="field-label">Website</span>
           <input
             autoComplete="off"
@@ -173,7 +176,16 @@ export function FooterContactForm({
 
       <div className="button-row">
         <button className="button" disabled={isPending} type="submit">
-          {isPending ? "Envoi..." : "Contacter ELEOB"}
+          <span aria-hidden="true" className="button-icon">
+            <Image
+              alt=""
+              className="button-icon-image"
+              height={16}
+              src="/envelope-icon.svg"
+              width={16}
+            />
+          </span>
+          {isPending ? "Envoi..." : "Envoyer"}
         </button>
       </div>
     </form>

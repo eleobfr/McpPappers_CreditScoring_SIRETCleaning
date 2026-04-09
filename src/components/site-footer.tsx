@@ -31,12 +31,7 @@ export function SiteFooter({
             <div className="footer-contact-card">
               <div className="stack-sm">
                 <span className="eyebrow footer-eyebrow">Contact sécurisé</span>
-                <h3>Parler avec ELEOB Data Consulting</h3>
-                <p className="footer-contact-copy">
-                  Utilise ce formulaire pour une prise de contact, une démonstration ou
-                  une demande projet. L&apos;email destinataire n&apos;est pas exposé dans
-                  l&apos;interface.
-                </p>
+                <h3>Parler avec Vanuel 🙂</h3>
               </div>
               <FooterContactForm turnstileSiteKey={turnstileSiteKey} />
             </div>

@@ -8,7 +8,7 @@ const contactSchema = z.object({
   fullName: z.string().trim().min(2).max(120),
   email: z.string().trim().email().max(160),
   company: z.string().trim().max(160).optional(),
-  message: z.string().trim().min(20).max(4000),
+  message: z.string().trim().max(4000).optional(),
   turnstileToken: z.string().trim().optional(),
   website: z.string().trim().max(20).optional(),
 });

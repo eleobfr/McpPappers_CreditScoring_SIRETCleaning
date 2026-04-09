@@ -49,7 +49,7 @@ export async function sendContactRequestEmail(input: {
   fullName: string;
   email: string;
   company?: string;
-  message: string;
+  message?: string;
 }) {
   if (!isSmtpConfigured()) {
     logEvent("info", "contact.request.preview", input);
@@ -63,6 +63,7 @@ export async function sendContactRequestEmail(input: {
     throw new Error("SMTP configuration incomplete.");
   }
 
+  const message = input.message?.trim() || "Aucun message complémentaire fourni.";
   const subject = `Nouveau message site Credit Ops · ${input.fullName}`;
   const text = [
     "Nouveau message depuis le site Credit Ops",
@@ -72,7 +73,7 @@ export async function sendContactRequestEmail(input: {
     `Société : ${input.company || "Non renseignée"}`,
     "",
     "Message :",
-    input.message,
+    message,
   ].join("\n");
 
   const html = `
@@ -105,7 +106,7 @@ export async function sendContactRequestEmail(input: {
             </table>
             <div style="margin-top:18px;padding:18px;border:1px solid #dce4f2;border-radius:18px;background:#fafbfd;">
               <div style="margin-bottom:10px;color:#67738d;font-size:12px;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;">Message</div>
-              <div style="color:#26314a;line-height:1.7;white-space:pre-wrap;">${escapeHtml(input.message)}</div>
+              <div style="color:#26314a;line-height:1.7;white-space:pre-wrap;">${escapeHtml(message)}</div>
             </div>
           </div>
         </div>
