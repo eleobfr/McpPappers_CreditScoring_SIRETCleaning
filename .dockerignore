@@ -1,0 +1,8 @@
+.next
+node_modules
+npm-debug.log*
+coverage
+.env*
+data/*.db
+data/*.sqlite
+scaffold-app

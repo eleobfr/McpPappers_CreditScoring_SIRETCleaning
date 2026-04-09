@@ -1,0 +1,93 @@
+name: Deploy mixo75
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - main
+
+concurrency:
+  group: deploy-mixo75
+  cancel-in-progress: true
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Validate project
+        run: |
+          npm run typecheck
+          npm run lint
+          npm run test
+          npm run build
+
+      - name: Prepare release archive
+        run: |
+          mkdir -p dist
+          tar \
+            --exclude=.git \
+            --exclude=.github \
+            --exclude=node_modules \
+            --exclude=.next \
+            --exclude=coverage \
+            --exclude=.env.local \
+            --exclude=.env \
+            --exclude=data \
+            --exclude=.next-dev.log \
+            --exclude=.next-dev.err.log \
+            --exclude=.next-dev-auth.log \
+            --exclude=.next-dev-auth.err.log \
+            -czf dist/credit-ops-release.tar.gz .
+
+      - name: Setup SSH agent
+        uses: webfactory/ssh-agent@v0.9.0
+        with:
+          ssh-private-key: ${{ secrets.MIXO75_SSH_PRIVATE_KEY }}
+
+      - name: Add server to known_hosts
+        run: |
+          mkdir -p ~/.ssh
+          ssh-keyscan -H "${{ vars.MIXO75_HOST }}" >> ~/.ssh/known_hosts
+
+      - name: Upload release
+        run: |
+          scp dist/credit-ops-release.tar.gz "${{ vars.MIXO75_USER }}@${{ vars.MIXO75_HOST }}:/tmp/credit-ops-${{ github.sha }}.tar.gz"
+
+      - name: Deploy on server
+        run: |
+          ssh "${{ vars.MIXO75_USER }}@${{ vars.MIXO75_HOST }}" <<'EOF'
+          set -euo pipefail
+
+          SHA="${{ github.sha }}"
+          APP_DIR="/opt/vbaidata/apps/pappersmcp"
+          STACK_DIR="/opt/vbaidata"
+          STAGING_DIR="/tmp/credit-ops-$SHA"
+          ARCHIVE="/tmp/credit-ops-$SHA.tar.gz"
+
+          rm -rf "$STAGING_DIR"
+          mkdir -p "$STAGING_DIR"
+          tar -xzf "$ARCHIVE" -C "$STAGING_DIR"
+          rm -f "$ARCHIVE"
+
+          find "$APP_DIR" -mindepth 1 -maxdepth 1 ! -name data ! -name .env.local -exec rm -rf {} +
+          cp -a "$STAGING_DIR"/. "$APP_DIR"/
+          rm -rf "$STAGING_DIR"
+
+          cd "$STACK_DIR"
+          docker compose up -d --build pappersmcp
+
+          docker image prune -f >/dev/null 2>&1 || true
+          EOF

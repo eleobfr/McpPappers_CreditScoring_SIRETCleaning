@@ -1,36 +1,126 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Credit Ops
 
-## Getting Started
+MVP B2B francais pour verifier un client avant facturation, exploiter le MCP Pappers et produire une decision lisible pour la finance, l'ADV et le credit management.
 
-First, run the development server:
+## Parcours actuel
+
+- `/` : landing publique avec contenu SEO autour des themes `credit score` et `MCP Pappers`, plus cadre de connexion email au centre
+- `/verify` : application connectee, avec formulaire minimal, decision, journal MCP et historique du compte
+- `/login` : alias legacy qui redirige vers `/`
+- `/login/verify` : page de confirmation du magic link
+- `/checks/[id]` : redirection vers `/verify?check=...`
+- `/history` : redirection vers `/verify`
+- `/healthz` : endpoint de sante
+
+## Stack
+
+- Next.js 16 App Router
+- React 19
+- TypeScript strict
+- SQLite via `better-sqlite3`
+- Zod
+- Vitest
+- Docker + `docker-compose.yml`
+
+## Variables d'environnement
+
+Copier `.env.example` vers `.env.local` pour le developpement local.
+
+```env
+PAPPERS_MCP_URL=
+PAPPERS_API_TOKEN=
+APP_BASE_URL=http://localhost:3000
+TURNSTILE_SITE_KEY=
+TURNSTILE_SECRET_KEY=
+DATA_DIR=./data
+SMTP_HOST=
+SMTP_PORT=587
+SMTP_USER=
+SMTP_PASS=
+SMTP_FROM=
+SMTP_SECURE=false
+SMTP_REQUIRE_TLS=true
+DATABASE_PATH=./data/credit-ops.sqlite
+```
+
+Notes :
+
+- configuration recommandee Pappers : `PAPPERS_MCP_URL=https://mcp.pappers.fr/{votre-cle-api}`
+- `PAPPERS_API_TOKEN` reste accepte en fallback pour reconstruire l'URL MCP
+- la cle MCP Pappers et les secrets SMTP restent toujours cote serveur
+- Turnstile est active si `TURNSTILE_SITE_KEY` et `TURNSTILE_SECRET_KEY` sont presents
+
+## Lancer en local
+
+```bash
+npm install
+npm run dev
+```
+
+Landing : `http://localhost:3000`
+
+Application connectee : `http://localhost:3000/verify`
+
+## Docker
+
+```bash
+docker compose --env-file .env.local up --build
+```
+
+## Authentification
+
+- connexion par email professionnel
+- si l'email correspond a un admin en base, connexion immediate
+- sinon, un magic link est envoye
+- le magic link est valable 5 minutes
+- une session non-admin dure 25 minutes
+- a expiration, les donnees et l'historique du user non-admin sont supprimes
+
+Creer ou promouvoir un admin :
+
+```bash
+npm run admin:create -- admin@entreprise.fr "Admin Credit Ops"
+```
+
+## Turnstile
+
+Turnstile protege la demande de magic link.
+
+- widget cote client sur la landing
+- verification serveur via `https://challenges.cloudflare.com/turnstile/v0/siteverify`
+- en cas d'echec, aucun lien n'est emis
+
+## MCP Pappers
+
+Le provider live utilise le serveur MCP officiel Pappers en `streamable-http`.
+
+Outils utilises :
+
+- `sirenisateur`
+- `informations-entreprise`
+
+Le journal MCP de chaque analyse affiche :
+
+- les commandes envoyees
+- les donnees recues
+- les etapes d'orchestration
+- les horodatages
+
+## Commandes utiles
 
 ```bash
 npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+npm run typecheck
+npm run lint
+npm run test
+npm run build
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Deploiement
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+Le deploiement serveur vise `mixo75` via GitHub Actions.
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
-
-## Learn More
-
-To learn more about Next.js, take a look at the following resources:
-
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
-
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
-
-## Deploy on Vercel
-
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
-
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+- workflow : `.github/workflows/deploy-mixo75.yml`
+- SMTP mutualise : `/etc/eleob/common-mail.env`
+- variables app : `/srv/credit-ops/.env.app`
+- data persistante : `/srv/credit-ops/data`
