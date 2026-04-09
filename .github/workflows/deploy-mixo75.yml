@@ -57,18 +57,32 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.MIXO75_SSH_PRIVATE_KEY }}
 
+      - name: Normalize deployment host
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          from urllib.parse import urlparse
+
+          raw = """${{ vars.MIXO75_HOST }}""".strip()
+          if "://" in raw:
+            host = urlparse(raw).hostname or raw
+          else:
+            host = raw.rstrip("/")
+
+          print(f"DEPLOY_HOST={host}")
+          PY
+
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H "${{ vars.MIXO75_HOST }}" >> ~/.ssh/known_hosts
+          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
 
       - name: Upload release
         run: |
-          scp dist/credit-ops-release.tar.gz "${{ vars.MIXO75_USER }}@${{ vars.MIXO75_HOST }}:/tmp/credit-ops-${{ github.sha }}.tar.gz"
+          scp dist/credit-ops-release.tar.gz "${{ vars.MIXO75_USER }}@$DEPLOY_HOST:/tmp/credit-ops-${{ github.sha }}.tar.gz"
 
       - name: Deploy on server
         run: |
-          ssh "${{ vars.MIXO75_USER }}@${{ vars.MIXO75_HOST }}" <<'EOF'
+          ssh "${{ vars.MIXO75_USER }}@$DEPLOY_HOST" <<'EOF'
           set -euo pipefail
 
           SHA="${{ github.sha }}"
