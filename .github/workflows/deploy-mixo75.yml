@@ -68,21 +68,29 @@ jobs:
           else:
             host = raw.rstrip("/")
 
+          if not host:
+            host = "51.159.109.45"
+
           print(f"DEPLOY_HOST={host}")
           PY
 
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
-          ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts
+          if ssh-keyscan -H "$DEPLOY_HOST" >> ~/.ssh/known_hosts 2>/dev/null; then
+            echo "SSH_HOST=$DEPLOY_HOST" >> "$GITHUB_ENV"
+          else
+            ssh-keyscan -H "51.159.109.45" >> ~/.ssh/known_hosts 2>/dev/null
+            echo "SSH_HOST=51.159.109.45" >> "$GITHUB_ENV"
+          fi
 
       - name: Upload release
         run: |
-          scp dist/credit-ops-release.tar.gz "${{ vars.MIXO75_USER }}@$DEPLOY_HOST:/tmp/credit-ops-${{ github.sha }}.tar.gz"
+          scp dist/credit-ops-release.tar.gz "${{ vars.MIXO75_USER }}@$SSH_HOST:/tmp/credit-ops-${{ github.sha }}.tar.gz"
 
       - name: Deploy on server
         run: |
-          ssh "${{ vars.MIXO75_USER }}@$DEPLOY_HOST" <<'EOF'
+          ssh "${{ vars.MIXO75_USER }}@$SSH_HOST" <<'EOF'
           set -euo pipefail
 
           SHA="${{ github.sha }}"
