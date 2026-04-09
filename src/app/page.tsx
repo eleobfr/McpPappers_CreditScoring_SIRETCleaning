@@ -112,49 +112,6 @@ export default async function LandingPage({
           <LoginForm turnstileSiteKey={turnstileSiteKey} />
         </div>
       </section>
-
-      <section className="seo-section stack-lg">
-        <div className="section-heading">
-          <div>
-            <p className="eyebrow">SEO</p>
-            <h2>Pourquoi parler de credit score et de MCP Pappers sur cette landing</h2>
-          </div>
-          <p className="section-subtitle seo-section-copy">
-            Cette page sert a la fois de point d&apos;entree produit et de page de
-            referencement pour les recherches autour du credit score B2B, du matching
-            SIREN/SIRET et des usages du MCP Pappers.
-          </p>
-        </div>
-
-        <div className="seo-card-grid">
-          <article className="card stack-md">
-            <h3>Credit score B2B</h3>
-            <p className="muted-text">
-              Un credit score utile n&apos;est pas seulement un signal de risque. Il doit
-              aussi aider a choisir la bonne entite legale, justifier la decision et
-              limiter les revues manuelles inutiles avant facturation.
-            </p>
-          </article>
-
-          <article className="card stack-md">
-            <h3>MCP Pappers</h3>
-            <p className="muted-text">
-              Le MCP Pappers permet d&apos;interroger les donnees entreprise avec une
-              trace technique lisible. Cela facilite les tests, l&apos;explicabilite et la
-              preparation d&apos;une integration plus robuste en production.
-            </p>
-          </article>
-
-          <article className="card stack-md">
-            <h3>Verification avant facturation</h3>
-            <p className="muted-text">
-              En pratique, la valeur vient de la rapidite de decision : identifier le
-              bon tiers, estimer le risque, proposer une limite de credit et garder un
-              historique clair pour l&apos;equipe finance.
-            </p>
-          </article>
-        </div>
-      </section>
     </div>
   );
 }
