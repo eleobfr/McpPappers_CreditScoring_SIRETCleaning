@@ -1,0 +1,53 @@
+import { FooterContactForm } from "@/components/footer-contact-form";
+
+export function SiteFooter({
+  turnstileSiteKey,
+}: {
+  turnstileSiteKey?: string;
+}) {
+  return (
+    <footer className="site-footer print-hidden">
+      <div className="container footer-shell">
+        <div className="footer-inner">
+          <div className="footer-top">
+            <div className="footer-copy">
+              <span className="eyebrow footer-eyebrow">Informations</span>
+              <h2 className="footer-title">Credit Ops · Contact et informations éditeur</h2>
+              <p>
+                Ce site a été développé par <strong>Vanuel BELLANCE</strong> pour la
+                société <strong>ELEOB Data Consulting</strong>.
+              </p>
+              <p>
+                Outil de démonstration B2B autour du crédit score, du matching
+                entreprise et du MCP Pappers, destiné aux directions financières et au
+                credit management.
+              </p>
+              <p>
+                Les demandes envoyées via le formulaire ci-contre sont transmises de
+                manière sécurisée côté serveur vers l&apos;adresse de contact ELEOB.
+              </p>
+            </div>
+
+            <div className="footer-contact-card">
+              <div className="stack-sm">
+                <span className="eyebrow footer-eyebrow">Contact sécurisé</span>
+                <h3>Parler avec ELEOB Data Consulting</h3>
+                <p className="footer-contact-copy">
+                  Utilise ce formulaire pour une prise de contact, une démonstration ou
+                  une demande projet. L&apos;email destinataire n&apos;est pas exposé dans
+                  l&apos;interface.
+                </p>
+              </div>
+              <FooterContactForm turnstileSiteKey={turnstileSiteKey} />
+            </div>
+          </div>
+
+          <div className="footer-bottom">
+            <p>ELEOB Data Consulting · Contact professionnel sécurisé · France</p>
+            <p>Credit Ops · Vérification client avant facturation · Démonstration produit</p>
+          </div>
+        </div>
+      </div>
+    </footer>
+  );
+}

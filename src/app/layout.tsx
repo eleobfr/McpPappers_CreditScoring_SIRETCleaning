@@ -5,9 +5,10 @@ import Link from "next/link";
 
 import { SourceBadge } from "@/components/badges";
 import { FloatingFeedback } from "@/components/floating-feedback";
+import { SiteFooter } from "@/components/site-footer";
 import { getFeedbackDraftForUser } from "@/lib/auth/auth-repository";
 import { getCurrentUser } from "@/lib/auth/session";
-import { hasPappersMcpConfigured } from "@/lib/env";
+import { appEnv, hasPappersMcpConfigured, hasTurnstileConfigured } from "@/lib/env";
 
 import "./globals.css";
 
@@ -46,6 +47,9 @@ export default async function RootLayout({
   children: React.ReactNode;
 }>) {
   const pappersConfigured = hasPappersMcpConfigured();
+  const turnstileSiteKey = hasTurnstileConfigured()
+    ? appEnv.turnstile.siteKey
+    : undefined;
   const user = await getCurrentUser();
   const initialFeedback =
     user && !user.isAdmin ? getFeedbackDraftForUser(user.id) : "";
@@ -89,6 +93,7 @@ export default async function RootLayout({
           </header>
 
           <main className="page-shell">{children}</main>
+          <SiteFooter turnstileSiteKey={turnstileSiteKey} />
 
           {user && !user.isAdmin ? (
             <FloatingFeedback initialFeedback={initialFeedback} />
