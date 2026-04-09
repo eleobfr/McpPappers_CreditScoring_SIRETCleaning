@@ -95,7 +95,6 @@ export default async function LandingPage({
             </article>
           </div>
         </div>
-        <div className="hero-pattern" />
       </section>
 
       <section className="landing-login-shell">
