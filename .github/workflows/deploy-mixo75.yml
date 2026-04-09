@@ -74,6 +74,21 @@ jobs:
           print(f"DEPLOY_HOST={host}")
           PY
 
+      - name: Normalize deployment user
+        run: |
+          python - <<'PY' >> "$GITHUB_ENV"
+          raw = """${{ vars.MIXO75_USER }}""".strip()
+          if "@" in raw:
+            user = raw.split("@", 1)[0]
+          else:
+            user = raw
+
+          if not user:
+            user = "github-creditops"
+
+          print(f"DEPLOY_USER={user}")
+          PY
+
       - name: Add server to known_hosts
         run: |
           mkdir -p ~/.ssh
@@ -86,11 +101,11 @@ jobs:
 
       - name: Upload release
         run: |
-          scp dist/credit-ops-release.tar.gz "${{ vars.MIXO75_USER }}@$SSH_HOST:/tmp/credit-ops-${{ github.sha }}.tar.gz"
+          scp dist/credit-ops-release.tar.gz "$DEPLOY_USER@$SSH_HOST:/tmp/credit-ops-${{ github.sha }}.tar.gz"
 
       - name: Deploy on server
         run: |
-          ssh "${{ vars.MIXO75_USER }}@$SSH_HOST" <<'EOF'
+          ssh "$DEPLOY_USER@$SSH_HOST" <<'EOF'
           set -euo pipefail
 
           SHA="${{ github.sha }}"
