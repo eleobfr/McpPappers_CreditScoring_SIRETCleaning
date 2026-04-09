@@ -32,6 +32,7 @@ import {
   sendMagicLinkEmail,
   sendQueuedAdminDigestIfDue,
 } from "@/lib/auth/magic-link-email";
+import { logEvent } from "@/lib/logger";
 
 export const AUTH_SESSION_COOKIE = "credit_ops_session";
 const ADMIN_SESSION_DURATION_MINUTES = 60 * 24 * 30;
@@ -59,7 +60,15 @@ async function finalizeNonAdminUserSession(
         feedbackText: feedback,
       },
     });
-    await sendQueuedAdminDigestIfDue();
+    try {
+      await sendQueuedAdminDigestIfDue();
+    } catch (error) {
+      logEvent("error", "auth.admin_digest.failed", {
+        userId,
+        reason,
+        error,
+      });
+    }
   }
 
   deleteUserData(userId);
@@ -221,13 +230,14 @@ export async function saveFeedbackDraft(userId: string, feedbackText: string) {
 export async function signOutUser() {
   const cookieStore = await cookies();
   const sessionToken = cookieStore.get(AUTH_SESSION_COOKIE)?.value;
-  const user = await getCurrentUser();
+  const user = sessionToken ? findUserBySessionToken(sessionToken) : null;
 
   if (sessionToken) {
     deleteSession(sessionToken);
   }
 
   if (user && !user.isAdmin) {
+    deleteSessionsForUser(user.id);
     await finalizeNonAdminUserSession(user.id, "manual-logout");
   }
 
