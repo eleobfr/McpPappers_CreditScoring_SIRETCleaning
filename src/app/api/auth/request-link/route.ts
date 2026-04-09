@@ -45,26 +45,6 @@ export async function POST(request: Request) {
     );
   }
 
-  const turnstileResult = await verifyTurnstileToken({
-    token: parsed.data.turnstileToken,
-    remoteIp: getClientIp(request),
-  });
-
-  if (!turnstileResult.success) {
-    return NextResponse.json(
-      {
-        status: "error",
-        message: "Le controle anti-abus n'a pas pu etre valide.",
-        turnstileRequired: true,
-        fieldErrors: {
-          turnstileToken: ["Validez le controle de securite puis recommencez."],
-        },
-        errorCodes: turnstileResult.errorCodes,
-      },
-      { status: 400 },
-    );
-  }
-
   const email = normalizeEmail(parsed.data.email);
 
   if (isAdminEmail(email)) {
@@ -89,6 +69,26 @@ export async function POST(request: Request) {
     });
 
     return response;
+  }
+
+  const turnstileResult = await verifyTurnstileToken({
+    token: parsed.data.turnstileToken,
+    remoteIp: getClientIp(request),
+  });
+
+  if (!turnstileResult.success) {
+    return NextResponse.json(
+      {
+        status: "error",
+        message: "Le controle anti-abus n'a pas pu etre valide.",
+        turnstileRequired: true,
+        fieldErrors: {
+          turnstileToken: ["Validez le controle de securite puis recommencez."],
+        },
+        errorCodes: turnstileResult.errorCodes,
+      },
+      { status: 400 },
+    );
   }
 
   const delivery = await requestMagicLink(email);
