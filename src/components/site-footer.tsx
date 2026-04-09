@@ -12,19 +12,14 @@ export function SiteFooter({
           <div className="footer-top">
             <div className="footer-copy">
               <span className="eyebrow footer-eyebrow">Informations</span>
-              <h2 className="footer-title">Credit Ops · Contact et informations éditeur</h2>
+              <h2 className="footer-title">Credit Ops · Informations éditeur</h2>
               <p>
                 Ce site a été développé par <strong>Vanuel BELLANCE</strong> pour la
                 société <strong>ELEOB Data Consulting</strong>.
               </p>
               <p>
-                Outil de démonstration B2B autour du crédit score, du matching
-                entreprise et du MCP Pappers, destiné aux directions financières et au
-                credit management.
-              </p>
-              <p>
-                Les demandes envoyées via le formulaire ci-contre sont transmises de
-                manière sécurisée côté serveur vers l&apos;adresse de contact ELEOB.
+                Solution de démonstration B2B autour du crédit score, du matching
+                entreprise et du MCP Pappers.
               </p>
             </div>
 

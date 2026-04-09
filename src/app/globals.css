@@ -1691,6 +1691,7 @@ button {
   border-radius: 24px;
   background: rgba(255, 255, 255, 0.08);
   backdrop-filter: blur(10px);
+  min-width: 0;
 }
 
 .footer-contact-copy {
@@ -1758,6 +1759,7 @@ button {
   gap: 0.6rem;
   color: rgba(255, 255, 255, 0.9);
   line-height: 1.6;
+  min-width: 0;
 }
 
 .footer-bottom {
@@ -1857,10 +1859,13 @@ button {
   .page-header,
   .section-heading,
   .form-section-head,
-  .footer-top,
   .footer-bottom {
     align-items: flex-start;
     flex-direction: column;
+  }
+
+  .footer-top {
+    grid-template-columns: 1fr;
   }
 
   .stats-strip,
@@ -1902,6 +1907,49 @@ button {
   .compact-grid,
   .footer-contact-grid {
     grid-template-columns: 1fr;
+  }
+
+  .footer-shell {
+    padding-top: 1.25rem;
+    padding-bottom: 1.25rem;
+  }
+
+  .footer-inner {
+    gap: 1rem;
+  }
+
+  .footer-title {
+    font-size: 1.55rem;
+    line-height: 1.15;
+  }
+
+  .footer-copy {
+    gap: 0.5rem;
+    font-size: 0.98rem;
+  }
+
+  .footer-contact-card {
+    width: 100%;
+    padding: 1rem;
+    border-radius: 20px;
+  }
+
+  .feedback-float {
+    right: 0.65rem;
+    bottom: max(0.5rem, env(safe-area-inset-bottom));
+    gap: 0.55rem;
+  }
+
+  .feedback-card {
+    width: min(340px, calc(100vw - 1rem));
+    max-height: 62vh;
+    overflow-y: auto;
+    border-radius: 20px;
+  }
+
+  .feedback-toggle {
+    min-height: 2.5rem;
+    padding: 0.65rem 0.95rem;
   }
 
   .field-span-2 {

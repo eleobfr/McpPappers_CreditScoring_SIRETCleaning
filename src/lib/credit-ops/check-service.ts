@@ -32,9 +32,36 @@ function requireEnoughIdentity(input: VerificationInput) {
   const compactName = normalizedName.replace(/[^a-zA-Z0-9]/g, "");
   if (compactName.length <= 4) {
     throw new Error(
-      "Saisie trop courte ou ambiguë. Pour un sigle comme « EDF », indiquez le SIREN/SIRET ou la raison sociale complète.",
+      "Saisie trop courte ou ambiguë. Pour un sigle comme « EDF », indiquez le SIREN ou le SIRET, ou la raison sociale complète.",
     );
   }
+}
+
+function toUserFacingProviderError(error: unknown) {
+  const errorMessage =
+    error instanceof Error
+      ? error.message
+      : "Le provider Pappers MCP est indisponible.";
+  const normalized = errorMessage.toLowerCase();
+
+  if (
+    normalized.includes("sirenisateur") &&
+    (normalized.includes("invalid tools/call result") ||
+      normalized.includes("invalid_union") ||
+      normalized.includes("-32602"))
+  ) {
+    return "Pappers MCP a renvoyé une réponse technique invalide pendant le rapprochement du nom saisi. Réessaie dans quelques instants ou renseigne directement le SIREN ou le SIRET.";
+  }
+
+  if (normalized.includes("informations-entreprise")) {
+    return "Pappers MCP est momentanément indisponible pendant l'enrichissement de la fiche entreprise. Réessaie dans quelques instants.";
+  }
+
+  if (normalized.includes("timeout") || normalized.includes("timed out")) {
+    return "Pappers MCP ne répond pas dans les délais attendus. Réessaie dans quelques instants.";
+  }
+
+  return "Pappers MCP est momentanément indisponible. Réessaie dans quelques instants ou indique le SIREN ou le SIRET pour fiabiliser l'analyse.";
 }
 
 function buildOrchestrationEntries(
@@ -72,7 +99,8 @@ function buildOrchestrationEntries(
       status: "success",
       startedAt: timestamp,
       completedAt: timestamp,
-      summary: "Le meilleur établissement a été retenu pour alimenter le moteur de décision.",
+      summary:
+        "Le meilleur établissement a été retenu pour alimenter le moteur de décision.",
       requestPayload: {
         candidatesCount: candidates.length,
       },
@@ -120,14 +148,7 @@ export async function createVerificationCheck(
       companyName: input.companyName,
     });
 
-    const errorMessage =
-      error instanceof Error
-        ? error.message
-        : "Le provider Pappers MCP est indisponible.";
-
-    throw new Error(
-      `Pappers MCP est momentanément indisponible. Aucun résultat n'a été substitué. Détail: ${errorMessage}`,
-    );
+    throw new Error(toUserFacingProviderError(error));
   }
 
   const candidates = buildRankedCandidates(input, lookupResult.companies);
@@ -143,9 +164,10 @@ export async function createVerificationCheck(
       rankingScore: candidate.rankingScore,
     })),
   });
+
   if (!candidates.length) {
     throw new Error(
-      "Aucune entreprise n'a pu être rapprochée avec les informations fournies.",
+      "Aucune entreprise n'a pu être rapprochée de manière fiable avec les informations fournies.",
     );
   }
 
