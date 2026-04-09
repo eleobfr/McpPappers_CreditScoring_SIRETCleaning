@@ -9,8 +9,6 @@ import { getFeedbackDraftForUser } from "@/lib/auth/auth-repository";
 import { getCurrentUser } from "@/lib/auth/session";
 import { hasPappersMcpConfigured } from "@/lib/env";
 
-import { logoutAction } from "@/app/login/actions";
-
 import "./globals.css";
 
 const plexSans = IBM_Plex_Sans({
@@ -79,7 +77,7 @@ export default async function RootLayout({
                       mode={pappersConfigured ? "live" : "unconfigured"}
                       providerName={pappersConfigured ? "PappersProvider" : undefined}
                     />
-                    <form action={logoutAction}>
+                    <form action="/api/auth/logout" method="post">
                       <button className="button button-secondary" type="submit">
                         Deconnexion
                       </button>
