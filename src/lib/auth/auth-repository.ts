@@ -20,6 +20,20 @@ export interface MagicLinkRecord {
   deliveryMetaJson: string | null;
 }
 
+export type AdminDigestEventType =
+  | "non-admin-connection"
+  | "non-admin-feedback";
+
+export interface AdminDigestEventRecord {
+  id: string;
+  eventType: AdminDigestEventType;
+  userEmail: string;
+  userFullName: string;
+  payload: Record<string, unknown> | null;
+  createdAt: string;
+  sentAt?: string | null;
+}
+
 interface UserRow {
   id: string;
   email: string;
@@ -27,6 +41,16 @@ interface UserRow {
   is_admin: number;
   created_at: string;
   updated_at: string;
+}
+
+interface AdminDigestEventRow {
+  id: string;
+  event_type: string;
+  user_email: string;
+  user_full_name: string;
+  event_payload_json: string | null;
+  created_at: string;
+  sent_at: string | null;
 }
 
 function mapUser(row: UserRow): AppUser {
@@ -37,6 +61,20 @@ function mapUser(row: UserRow): AppUser {
     isAdmin: Boolean(row.is_admin),
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+  };
+}
+
+function mapAdminDigestEvent(row: AdminDigestEventRow): AdminDigestEventRecord {
+  return {
+    id: row.id,
+    eventType: row.event_type as AdminDigestEventType,
+    userEmail: row.user_email,
+    userFullName: row.user_full_name,
+    payload: row.event_payload_json
+      ? (JSON.parse(row.event_payload_json) as Record<string, unknown>)
+      : null,
+    createdAt: row.created_at,
+    sentAt: row.sent_at,
   };
 }
 
@@ -103,6 +141,114 @@ export function listAdminUsers() {
     .all() as UserRow[];
 
   return rows.map(mapUser);
+}
+
+export function queueAdminDigestEvent(input: {
+  eventType: AdminDigestEventType;
+  userEmail: string;
+  userFullName: string;
+  payload?: Record<string, unknown>;
+}) {
+  const now = new Date().toISOString();
+
+  getDatabase()
+    .prepare(
+      `
+        INSERT INTO admin_digest_events (
+          id,
+          event_type,
+          user_email,
+          user_full_name,
+          event_payload_json,
+          created_at,
+          sent_at
+        ) VALUES (?, ?, ?, ?, ?, ?, NULL)
+      `,
+    )
+    .run(
+      randomUUID(),
+      input.eventType,
+      normalizeEmail(input.userEmail),
+      input.userFullName.trim(),
+      input.payload ? JSON.stringify(input.payload) : null,
+      now,
+    );
+}
+
+export function listPendingAdminDigestEvents() {
+  const rows = getDatabase()
+    .prepare(
+      `
+        SELECT *
+        FROM admin_digest_events
+        WHERE sent_at IS NULL
+        ORDER BY created_at ASC
+      `,
+    )
+    .all() as AdminDigestEventRow[];
+
+  return rows.map(mapAdminDigestEvent);
+}
+
+export function getOldestPendingAdminDigestEvent() {
+  const row = getDatabase()
+    .prepare(
+      `
+        SELECT *
+        FROM admin_digest_events
+        WHERE sent_at IS NULL
+        ORDER BY created_at ASC
+        LIMIT 1
+      `,
+    )
+    .get() as AdminDigestEventRow | undefined;
+
+  return row ? mapAdminDigestEvent(row) : null;
+}
+
+export function markAdminDigestEventsSent(eventIds: string[], sentAt: string) {
+  if (!eventIds.length) {
+    return;
+  }
+
+  const placeholders = eventIds.map(() => "?").join(", ");
+  getDatabase()
+    .prepare(
+      `
+        UPDATE admin_digest_events
+        SET sent_at = ?
+        WHERE id IN (${placeholders})
+      `,
+    )
+    .run(sentAt, ...eventIds);
+}
+
+export function getAppMetadataValue(key: string) {
+  const row = getDatabase()
+    .prepare(
+      `
+        SELECT value
+        FROM app_metadata
+        WHERE key = ?
+      `,
+    )
+    .get(key) as { value: string } | undefined;
+
+  return row?.value;
+}
+
+export function setAppMetadataValue(key: string, value: string) {
+  getDatabase()
+    .prepare(
+      `
+        INSERT INTO app_metadata (key, value, updated_at)
+        VALUES (?, ?, ?)
+        ON CONFLICT(key) DO UPDATE SET
+          value = excluded.value,
+          updated_at = excluded.updated_at
+      `,
+    )
+    .run(key, value, new Date().toISOString());
 }
 
 export function createOrUpdateUser(input: {

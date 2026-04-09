@@ -9,6 +9,7 @@ MVP B2B francais pour verifier un client avant facturation, exploiter le MCP Pap
 - `/login` : alias legacy qui redirige vers `/`
 - `/login/verify` : page de confirmation du magic link
 - `/checks/[id]` : redirection vers `/verify?check=...`
+- `/checks/[id]/export` : page rapport premium imprimable, optimisee pour export PDF navigateur
 - `/history` : redirection vers `/verify`
 - `/healthz` : endpoint de sante
 
@@ -76,6 +77,12 @@ docker compose --env-file .env.local up --build
 - une session non-admin dure 25 minutes
 - a expiration, les donnees et l'historique du user non-admin sont supprimes
 
+Notifications admin :
+
+- les connexions non-admin et feedbacks de fin de session sont agreges dans un resume horaire
+- le resume est envoye en HTML fr-FR a l'admin
+- l'envoi est pilote par une file d'evenements en base et un scheduler serveur leger
+
 Creer ou promouvoir un admin :
 
 ```bash
@@ -105,6 +112,21 @@ Le journal MCP de chaque analyse affiche :
 - les donnees recues
 - les etapes d'orchestration
 - les horodatages
+
+## Rapport PDF
+
+Depuis un dossier resultat dans `/verify`, le bouton `Exporter en PDF` ouvre un rapport premium imprimable :
+
+- couverture avec decision recommandee
+- synthese executive
+- identification entreprise
+- analyse de risque
+- analyse credit
+- recommandation operationnelle
+- trace de decision
+- mentions
+
+L'export repose sur une page HTML dediee et du print CSS pour rester simple, fiable et compatible avec l'export PDF du navigateur.
 
 ## Commandes utiles
 

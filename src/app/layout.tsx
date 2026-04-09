@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { Cormorant_Garamond, IBM_Plex_Mono, IBM_Plex_Sans } from "next/font/google";
+import Image from "next/image";
 import Link from "next/link";
 
 import { SourceBadge } from "@/components/badges";
@@ -34,6 +35,11 @@ export const metadata: Metadata = {
   title: "Credit Ops | Credit score et MCP Pappers",
   description:
     "Credit score B2B, verification client avant facturation et journal MCP Pappers dans une interface sobre et exploitable.",
+  icons: {
+    icon: "/credit-ops-favicon.svg",
+    shortcut: "/credit-ops-favicon.svg",
+    apple: "/credit-ops-favicon.svg",
+  },
 };
 
 export default async function RootLayout({
@@ -56,7 +62,13 @@ export default async function RootLayout({
           <header className="simple-header print-hidden">
             <div className="container simple-header-inner">
               <Link className="simple-brand" href={user ? "/verify" : "/"}>
-                <span className="simple-brand-word">Credit Ops</span>
+                <Image
+                  alt="Credit Ops"
+                  className="simple-brand-logo"
+                  height="44"
+                  src="/credit-ops-logo.svg"
+                  width="228"
+                />
               </Link>
 
               <div className="simple-header-actions">

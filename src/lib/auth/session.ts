@@ -8,6 +8,7 @@ import {
   countSessionsForUser,
   deleteExpiredMagicLinks,
   deleteExpiredSessions,
+  deleteMagicLinksForEmail,
   deleteSessionsForUser,
   deleteUserData,
   deleteSession,
@@ -19,6 +20,7 @@ import {
   normalizeEmail,
   deriveFullNameFromEmail,
   peekMagicLink,
+  queueAdminDigestEvent,
   updateMagicLinkDelivery,
   consumeMagicLink,
   upsertFeedbackDraftForUser,
@@ -26,8 +28,9 @@ import {
 } from "@/lib/auth/auth-repository";
 import { appEnv } from "@/lib/env";
 import {
-  sendAdminNotificationEmail,
+  ensureAdminDigestScheduler,
   sendMagicLinkEmail,
+  sendQueuedAdminDigestIfDue,
 } from "@/lib/auth/magic-link-email";
 
 export const AUTH_SESSION_COOKIE = "credit_ops_session";
@@ -47,23 +50,16 @@ async function finalizeNonAdminUserSession(
   const feedback = getFeedbackDraftForUser(userId).trim();
 
   if (feedback) {
-    await sendAdminNotificationEmail({
-      event: "non-admin-feedback",
-      subject: `Feedback Credit Ops · ${user.email}`,
-      text: [
-        `Utilisateur : ${user.email}`,
-        `Nom : ${user.fullName}`,
-        `Raison de fin de session : ${reason}`,
-        "",
-        "Feedback :",
-        feedback,
-      ].join("\n"),
-      metadata: {
-        userId,
-        email: user.email,
+    queueAdminDigestEvent({
+      eventType: "non-admin-feedback",
+      userEmail: user.email,
+      userFullName: user.fullName,
+      payload: {
         reason,
+        feedbackText: feedback,
       },
     });
+    await sendQueuedAdminDigestIfDue();
   }
 
   deleteUserData(userId);
@@ -80,6 +76,8 @@ function cleanupExpiredNonAdminSessions() {
 }
 
 export async function getCurrentUser() {
+  ensureAdminDigestScheduler();
+
   const expiredUsers = cleanupExpiredNonAdminSessions();
   for (const expiredUser of expiredUsers) {
     if (countSessionsForUser(expiredUser.userId) === 0) {
@@ -150,6 +148,8 @@ export async function autoSignInAdmin(email: string) {
 }
 
 export async function requestMagicLink(email: string) {
+  ensureAdminDigestScheduler();
+
   const normalizedEmail = normalizeEmail(email);
   const magicLink = createMagicLink({
     email: normalizedEmail,
@@ -167,20 +167,6 @@ export async function requestMagicLink(email: string) {
     deliveryMeta: delivery.deliveryMeta,
   });
 
-  await sendAdminNotificationEmail({
-    event: "magic-link-requested",
-    subject: `Magic link demandé · ${normalizedEmail}`,
-    text: [
-      `Demande de magic link pour : ${normalizedEmail}`,
-      `Statut d'envoi : ${delivery.deliveryStatus}`,
-      `Lien valable : ${MAGIC_LINK_DURATION_MINUTES} minutes`,
-    ].join("\n"),
-    metadata: {
-      email: normalizedEmail,
-      deliveryStatus: delivery.deliveryStatus,
-    },
-  });
-
   return {
     email: normalizedEmail,
     loginLink,
@@ -194,6 +180,8 @@ export function getMagicLinkPreview(token: string) {
 }
 
 export async function consumeMagicLinkAndCreateSession(token: string) {
+  ensureAdminDigestScheduler();
+
   const email = consumeMagicLink(token);
 
   if (!email) {
@@ -209,19 +197,16 @@ export async function consumeMagicLinkAndCreateSession(token: string) {
   deleteSessionsForUser(user.id);
   const session = createSession(user.id, NON_ADMIN_SESSION_DURATION_MINUTES);
 
-  await sendAdminNotificationEmail({
-    event: "magic-link-validated",
-    subject: `Magic link validé · ${email}`,
-    text: [
-      `Magic link validé pour : ${email}`,
-      `Session temporaire : ${NON_ADMIN_SESSION_DURATION_MINUTES} minutes`,
-      `Expiration : ${session.expiresAt}`,
-    ].join("\n"),
-    metadata: {
-      email,
+  queueAdminDigestEvent({
+    eventType: "non-admin-connection",
+    userEmail: email,
+    userFullName: user.fullName,
+    payload: {
       sessionExpiresAt: session.expiresAt,
+      sessionDurationMinutes: NON_ADMIN_SESSION_DURATION_MINUTES,
     },
   });
+  await sendQueuedAdminDigestIfDue();
 
   return {
     user,
@@ -248,3 +233,5 @@ export async function signOutUser() {
 
   cookieStore.delete(AUTH_SESSION_COOKIE);
 }
+
+export { deleteMagicLinksForEmail };

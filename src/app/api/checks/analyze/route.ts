@@ -48,7 +48,7 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json({
       status: "success",
-      redirectTo: `/verify?check=${check.id}`,
+      redirectTo: `/verify?check=${check.id}&focus=journal#journal-technique`,
       checkId: check.id,
     });
   } catch (error) {

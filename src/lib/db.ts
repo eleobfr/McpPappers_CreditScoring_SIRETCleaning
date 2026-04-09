@@ -71,6 +71,19 @@ function createDatabase() {
       FOREIGN KEY(user_id) REFERENCES app_users(id)
     );
 
+    CREATE TABLE IF NOT EXISTS admin_digest_events (
+      id TEXT PRIMARY KEY,
+      event_type TEXT NOT NULL,
+      user_email TEXT NOT NULL,
+      user_full_name TEXT NOT NULL,
+      event_payload_json TEXT,
+      created_at TEXT NOT NULL,
+      sent_at TEXT
+    );
+
+    CREATE INDEX IF NOT EXISTS admin_digest_events_pending_idx
+      ON admin_digest_events (sent_at, created_at DESC);
+
     CREATE TABLE IF NOT EXISTS verification_checks (
       id TEXT PRIMARY KEY,
       user_id TEXT,

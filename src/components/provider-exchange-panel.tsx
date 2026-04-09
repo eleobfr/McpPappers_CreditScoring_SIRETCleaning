@@ -29,7 +29,7 @@ export function ProviderExchangePanel({
   }
 
   return (
-    <section className="card stack-lg" id="journal-technique">
+    <section className="card stack-lg focus-target" id="journal-technique" tabIndex={-1}>
       <div className="section-heading">
         <div>
           <p className="eyebrow">Journal technique</p>
