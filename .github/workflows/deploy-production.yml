@@ -94,6 +94,14 @@ jobs:
           mkdir -p ~/.ssh
           ssh-keyscan -H "$DEPLOY_HOST_NORMALIZED" >> ~/.ssh/known_hosts 2>/dev/null
 
+      - name: Test SSH access
+        run: |
+          ssh -v \
+            -o BatchMode=yes \
+            -o StrictHostKeyChecking=yes \
+            "$DEPLOY_USER_NORMALIZED@$DEPLOY_HOST_NORMALIZED" \
+            "echo SSH_CONNECTION_OK"
+
       - name: Upload release
         run: |
           scp dist/app-release.tar.gz "$DEPLOY_USER_NORMALIZED@$DEPLOY_HOST_NORMALIZED:/tmp/app-release-${{ github.sha }}.tar.gz"
