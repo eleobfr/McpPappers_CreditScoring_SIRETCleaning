@@ -57,6 +57,10 @@ jobs:
         with:
           ssh-private-key: ${{ secrets.DEPLOY_SSH_PRIVATE_KEY }}
 
+      - name: Show loaded SSH key fingerprints
+        run: |
+          ssh-add -l
+
       - name: Normalize deployment host
         run: |
           python - <<'PY' >> "$GITHUB_ENV"
