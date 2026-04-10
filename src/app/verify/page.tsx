@@ -37,13 +37,17 @@ export default async function VerifyPage({
 
   return (
     <div className="container content-canvas stack-xl">
-      <section className="workspace-hero page-intro">
+      <section className="card stack-md">
         <div className="page-header">
           <div className="stack-sm">
-            <p className="eyebrow">Session</p>
-            <h1 className="page-title">Verifier un client avant facturation</h1>
+            <p className="eyebrow">Guide</p>
+            <p className="lead-text">
+              Renseigne la raison sociale, ajoute un SIREN ou un SIRET si tu
+              l&apos;as, puis clique sur analyser. La page affiche d&apos;abord la
+              décision métier, puis le journal technique séparé pour audit.
+            </p>
             <p className="section-subtitle">
-              {user.fullName} · {user.email}
+              Session active : {user.fullName} · {user.email}
             </p>
           </div>
           <SourceBadge
