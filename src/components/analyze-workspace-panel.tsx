@@ -50,12 +50,6 @@ export function AnalyzeWorkspacePanel({
 
   return (
     <section className="workspace-form stack-lg">
-      <div className="section-heading">
-        <div>
-          <p className="eyebrow">Dossier client</p>
-          <h2>Formulaire de vérification</h2>
-        </div>
-      </div>
       <CheckForm onAnalyzeStart={() => setClearedAnalysisKey(currentAnalysisKey)} />
       <ProviderExchangePanel
         providerName="PappersProvider"
